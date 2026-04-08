@@ -1,52 +1,64 @@
 import { Platform } from 'react-native';
 
-const tintColorLight = '#4F46E5';
-const tintColorDark = '#818CF8';
+// Lunia — AmEx inspired: deep navy + gold
+export const LuniaColors = {
+  navy: '#0A0F1E',
+  navyLight: '#141A2E',
+  navyCard: '#1A2138',
+  gold: '#C9A84C',
+  goldLight: '#E2C47A',
+  goldDark: '#A07830',
+  white: '#F5F0E8',
+  whiteOff: '#D4CFC6',
+  gray: '#7A8099',
+  grayLight: '#A0A8BF',
+  success: '#2ECC71',
+  danger: '#E74C3C',
+  warning: '#F39C12',
+};
 
 export const Colors = {
   light: {
-    text: '#0F172A',
-    background: '#F1F5F9',
-    tint: tintColorLight,
-    icon: '#64748B',
-    tabIconDefault: '#94A3B8',
-    tabIconSelected: tintColorLight,
+    text: '#0A0F1E',
+    background: '#F2EFE8',
+    tint: LuniaColors.gold,
+    icon: '#5A6070',
+    tabIconDefault: '#A0A8BF',
+    tabIconSelected: LuniaColors.gold,
     card: '#FFFFFF',
-    cardBorder: '#E2E8F0',
-    textSecondary: '#64748B',
-    success: '#10B981',
-    danger: '#EF4444',
-    warning: '#F59E0B',
-    primary: '#4F46E5',
-    primaryDark: '#3730A3',
+    cardBorder: '#E0DBD0',
+    textSecondary: '#7A8099',
+    success: LuniaColors.success,
+    danger: LuniaColors.danger,
+    warning: LuniaColors.warning,
+    primary: LuniaColors.gold,
+    primaryDark: LuniaColors.goldDark,
+    navy: LuniaColors.navy,
   },
   dark: {
-    text: '#F8FAFC',
-    background: '#0F172A',
-    tint: tintColorDark,
-    icon: '#94A3B8',
-    tabIconDefault: '#475569',
-    tabIconSelected: tintColorDark,
-    card: '#1E293B',
-    cardBorder: '#334155',
-    textSecondary: '#94A3B8',
-    success: '#10B981',
-    danger: '#EF4444',
-    warning: '#F59E0B',
-    primary: '#818CF8',
-    primaryDark: '#6366F1',
+    text: LuniaColors.white,
+    background: LuniaColors.navy,
+    tint: LuniaColors.gold,
+    icon: LuniaColors.grayLight,
+    tabIconDefault: '#3A4055',
+    tabIconSelected: LuniaColors.gold,
+    card: LuniaColors.navyCard,
+    cardBorder: '#252D45',
+    textSecondary: LuniaColors.gray,
+    success: LuniaColors.success,
+    danger: LuniaColors.danger,
+    warning: LuniaColors.warning,
+    primary: LuniaColors.gold,
+    primaryDark: LuniaColors.goldDark,
+    navy: LuniaColors.navy,
   },
 };
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {

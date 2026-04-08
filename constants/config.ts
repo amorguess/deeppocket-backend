@@ -1,10 +1,12 @@
-// Remplacez cette URL par votre lien de paiement SumUp personnel
 export const SUMUP_PAYMENT_LINK = 'https://pay.sumup.com/b2c/QPIX4CVQ';
 
+export const APP_NAME = 'Lunia';
+
 export const APP_USER = {
-  name: 'Mohamed Ben Ali',
-  initials: 'MB',
-  email: 'mohamed@exemple.com',
+  name: 'Amor Guesmi',
+  initials: 'AG',
+  email: 'amor@lunia.app',
+  cardNumber: '**** **** **** 4821',
   verified: true,
 };
 
@@ -25,7 +27,6 @@ export const SUPPORTED_CURRENCIES: Currency[] = [
   { code: 'TND', symbol: 'DT', flag: '🇹🇳', name: 'Dinar Tunisien' },
 ];
 
-// Taux de change par rapport à l'EUR — remplacer par une vraie API (ex: exchangerate-api.com)
 export const EXCHANGE_RATES: Record<string, number> = {
   EUR: 1,
   USD: 1.09,
