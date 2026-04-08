@@ -1,5 +1,5 @@
 // Remplacez cette URL par votre lien de paiement SumUp personnel
-export const SUMUP_PAYMENT_LINK = 'https://pay.sumup.com/b2c/VOTRE_CODE_ICI';
+export const SUMUP_PAYMENT_LINK = 'https://pay.sumup.com/b2c/QPIX4CVQ';
 
 export const APP_USER = {
   name: 'Mohamed Ben Ali',
