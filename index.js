@@ -3,33 +3,25 @@ const admin = require('firebase-admin');
 const app = express();
 app.use(express.json());
 
-const privateKey = process.env.FIREBASE_PRIVATE_KEY
-  ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-  : null;
-
-if (privateKey) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: privateKey,
-    })
-  });
+try {
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+  console.log('Firebase OK');
+} catch(e) {
+  console.error('Firebase init error:', e.message);
 }
 
-const db = admin.firestore ? admin.firestore() : null;
-const THB_PER_EUR = 37.6;
+const getDb = () => { try { return admin.firestore(); } catch(e) { return null; } };
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 app.get('/balance/:userId', async (req, res) => {
   try {
-    const { userId } = req.params;
+    const db = getDb();
     if (!db) return res.json({ balance: 0 });
-    const user = await db.collection('users').doc(userId).get();
+    const user = await db.collection('users').doc(req.params.userId).get();
     res.json({ balance: user.exists ? (user.data().balance || 0) : 0 });
   } catch (err) {
-    console.error('Balance error:', err.message);
     res.json({ balance: 0, error: err.message });
   }
 });
@@ -37,6 +29,7 @@ app.get('/balance/:userId', async (req, res) => {
 app.post('/webhook/sumup', async (req, res) => {
   try {
     const { status, checkout_reference } = req.body;
+    const db = getDb();
     if (status === 'PAID' && checkout_reference && db) {
       const checkoutRef = db.collection('checkouts').doc(checkout_reference);
       const checkout = await checkoutRef.get();
@@ -44,33 +37,33 @@ app.post('/webhook/sumup', async (req, res) => {
         const { userId, thbAmount } = checkout.data();
         const userRef = db.collection('users').doc(userId);
         const user = await userRef.get();
-        const currentBalance = user.exists ? (user.data().balance || 0) : 0;
-        await userRef.set({ balance: currentBalance + thbAmount }, { merge: true });
+        const current = user.exists ? (user.data().balance || 0) : 0;
+        await userRef.set({ balance: current + thbAmount }, { merge: true });
         await checkoutRef.update({ status: 'paid' });
-        console.log('Solde credite: +' + thbAmount + ' THB pour ' + userId);
+        console.log('Credite +' + thbAmount + ' THB -> ' + userId);
       }
     }
-    res.status(200).json({ received: true });
+    res.json({ received: true });
   } catch (err) {
-    console.error('Webhook error:', err.message);
-    res.status(200).json({ received: true });
+    res.json({ received: true, error: err.message });
   }
 });
 
 app.post('/debit', async (req, res) => {
   try {
     const { userId, amount } = req.body;
+    const db = getDb();
     if (!db) return res.status(500).json({ error: 'DB non disponible' });
     const userRef = db.collection('users').doc(userId);
     const user = await userRef.get();
-    const currentBalance = user.exists ? (user.data().balance || 0) : 0;
-    if (currentBalance < amount) return res.status(400).json({ error: 'Solde insuffisant' });
-    await userRef.set({ balance: currentBalance - amount }, { merge: true });
-    res.json({ newBalance: currentBalance - amount });
+    const current = user.exists ? (user.data().balance || 0) : 0;
+    if (current < amount) return res.status(400).json({ error: 'Solde insuffisant' });
+    await userRef.set({ balance: current - amount }, { merge: true });
+    res.json({ newBalance: current - amount });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, '0.0.0.0', () => console.log('DeepPocket backend on port ' + PORT));
+app.listen(PORT, '0.0.0.0', () => console.log('DeepPocket on port ' + PORT));
