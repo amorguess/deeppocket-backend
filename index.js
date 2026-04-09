@@ -123,5 +123,8 @@ app.post('/debit', async (req, res) => {
   }
 });
 
+// Servir le Mini App Telegram
+app.use(express.static(__dirname + '/public'));
+
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, '0.0.0.0', () => console.log('Lunia backend on port ' + PORT));

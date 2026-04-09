@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Lunia</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --navy:      #0A0F1E;
+      --navy-light:#141A2E;
+      --navy-card: #1A2138;
+      --gold:      #C9A84C;
+      --gold-light:#E2C47A;
+      --gold-dark: #A07830;
+      --white:     #F5F0E8;
+      --gray:      #7A8099;
+      --success:   #2ECC71;
+      --danger:    #E74C3C;
+    }
+
+    body {
+      background: var(--navy);
+      color: var(--white);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    /* NAV */
+    .nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--navy-light);
+      border-top: 1px solid rgba(201,168,76,0.2);
+      display: flex; height: 62px; z-index: 100;
+    }
+    .nav-btn {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 3px; background: none; border: none;
+      color: #3A4055; cursor: pointer; font-size: 10px;
+      font-weight: 700; letter-spacing: 0.3px;
+      transition: color 0.2s;
+    }
+    .nav-btn.active { color: var(--gold); }
+    .nav-btn svg { width: 22px; height: 22px; fill: currentColor; }
+
+    /* SCREENS */
+    .screen { display: none; padding: 20px; }
+    .screen.active { display: block; }
+
+    /* HEADER */
+    .header {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 20px;
+    }
+    .app-name { font-size: 24px; font-weight: 900; color: var(--gold); letter-spacing: 2px; }
+    .subtitle { font-size: 12px; color: var(--gray); margin-top: 2px; }
+    .avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--navy-card);
+      border: 1px solid rgba(201,168,76,0.4);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800; color: var(--gold);
+    }
+
+    /* BALANCE CARD */
+    .balance-card {
+      background: var(--navy-light);
+      border: 1px solid rgba(201,168,76,0.25);
+      border-radius: 20px; padding: 22px; margin-bottom: 16px;
+    }
+    .bal-label { color: var(--gray); font-size: 12px; margin-bottom: 6px; }
+    .bal-amount { color: var(--white); font-size: 40px; font-weight: 800; letter-spacing: -1px; }
+    .bal-sub { color: var(--gray); font-size: 12px; margin-top: 4px; }
+    .bal-row { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+    .bal-flag { color: var(--gray); font-size: 11px; }
+    .rate-chip {
+      background: rgba(201,168,76,0.15);
+      padding: 4px 10px; border-radius: 20px;
+      color: var(--gold); font-size: 11px; font-weight: 600;
+    }
+
+    /* ACTIONS */
+    .actions { display: flex; gap: 12px; margin-bottom: 28px; }
+    .action-btn {
+      flex: 1; background: var(--navy-card);
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 16px; padding: 18px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 6px; cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .action-btn:active { opacity: 0.8; }
+    .action-btn.primary { background: var(--gold); border-color: var(--gold); }
+    .action-icon { font-size: 28px; }
+    .action-label { font-size: 15px; font-weight: 700; color: var(--white); }
+    .action-btn.primary .action-label { color: var(--navy); }
+    .action-sub { font-size: 10px; color: var(--gray); }
+    .action-btn.primary .action-sub { color: rgba(10,15,30,0.6); }
+
+    /* SECTION */
+    .section-title {
+      font-size: 11px; color: var(--gray); font-weight: 700;
+      letter-spacing: 0.8px; text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    /* TRANSACTIONS */
+    .tx-list {
+      background: var(--navy-card);
+      border: 1px solid rgba(201,168,76,0.15);
+      border-radius: 16px; overflow: hidden;
+    }
+    .tx-row {
+      display: flex; align-items: center;
+      padding: 14px; gap: 12px;
+      border-bottom: 1px solid var(--navy);
+    }
+    .tx-row:last-child { border-bottom: none; }
+    .tx-icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: var(--navy);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .tx-info { flex: 1; }
+    .tx-label { font-size: 14px; font-weight: 600; color: var(--white); }
+    .tx-date { font-size: 11px; color: var(--gray); margin-top: 2px; }
+    .tx-amount { font-size: 14px; font-weight: 800; }
+    .amount-in { color: var(--success); }
+    .amount-out { color: var(--danger); }
+    .empty-text { color: var(--gray); font-size: 13px; }
+
+    /* CARD / MODAL */
+    .card {
+      background: var(--navy-card);
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 18px; padding: 18px; margin-bottom: 16px;
+    }
+    .card-label {
+      color: var(--gray); font-size: 13px;
+      font-weight: 600; margin-bottom: 14px;
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.8);
+      display: none; align-items: flex-end;
+      z-index: 200;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-sheet {
+      background: var(--navy-light);
+      border-top: 1px solid rgba(201,168,76,0.3);
+      border-radius: 28px 28px 0 0;
+      padding: 28px 28px 44px; width: 100%;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-title { font-size: 22px; font-weight: 900; color: var(--white); margin-bottom: 4px; }
+    .modal-sub { font-size: 13px; color: var(--gray); margin-bottom: 22px; }
+
+    /* QUICK AMOUNTS */
+    .quick-row { display: flex; gap: 8px; margin-bottom: 20px; }
+    .quick-btn {
+      flex: 1; background: var(--navy);
+      border: 1px solid rgba(201,168,76,0.25);
+      border-radius: 12px; padding: 12px;
+      text-align: center; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .quick-btn.active { background: rgba(201,168,76,0.2); border-color: var(--gold); }
+    .quick-val { font-size: 16px; font-weight: 700; color: var(--gray); }
+    .quick-btn.active .quick-val { color: var(--gold); }
+    .quick-thb { font-size: 10px; color: var(--gray); margin-top: 2px; }
+
+    /* INPUT */
+    .input-row {
+      display: flex; align-items: center;
+      background: var(--navy);
+      border: 1px solid rgba(201,168,76,0.25);
+      border-radius: 12px; padding: 0 14px;
+      height: 52px; margin-bottom: 22px; gap: 8px;
+    }
+    .input-symbol { color: var(--gray); font-size: 18px; }
+    .input-row input {
+      flex: 1; background: none; border: none; outline: none;
+      color: var(--white); font-size: 18px;
+    }
+    .input-row input::placeholder { color: var(--gray); }
+    .input-convert { color: var(--gold); font-size: 13px; font-weight: 600; white-space: nowrap; }
+
+    /* BUTTONS */
+    .pay-btn {
+      width: 100%; background: var(--gold);
+      border: none; border-radius: 14px;
+      padding: 16px; font-size: 15px; font-weight: 900;
+      color: var(--navy); cursor: pointer; margin-bottom: 10px;
+      transition: opacity 0.2s;
+    }
+    .pay-btn:disabled { opacity: 0.4; }
+    .cancel-btn {
+      width: 100%; background: none; border: none;
+      color: var(--gray); font-size: 15px;
+      padding: 12px; cursor: pointer;
+    }
+
+    /* SCANNER */
+    #scanner-view {
+      position: fixed; inset: 0;
+      background: #000; z-index: 300;
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    #scanner-view.open { display: flex; }
+    #scanner-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .scan-overlay {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 24px;
+    }
+    .scan-title { color: #fff; font-size: 18px; font-weight: 700; }
+    .scan-frame {
+      width: 240px; height: 240px; position: relative;
+    }
+    .scan-corner {
+      position: absolute; width: 32px; height: 32px;
+      border-color: var(--gold);
+      border-top: 3px solid; border-left: 3px solid;
+      border-radius: 4px;
+    }
+    .c-tl { top: 0; left: 0; }
+    .c-tr { top: 0; right: 0; transform: rotate(90deg); }
+    .c-bl { bottom: 0; left: 0; transform: rotate(-90deg); }
+    .c-br { bottom: 0; right: 0; transform: rotate(180deg); }
+    .scan-sub { color: var(--gray); font-size: 13px; }
+    .close-scan {
+      position: absolute; bottom: 52px;
+      background: rgba(0,0,0,0.75);
+      border: none; color: #fff;
+      padding: 14px 32px; border-radius: 30px;
+      font-size: 16px; font-weight: 600; cursor: pointer;
+      z-index: 1;
+    }
+
+    /* BUDGET */
+    .preset-row { display: flex; gap: 8px; margin-bottom: 16px; }
+    .preset-btn {
+      flex: 1; background: var(--navy);
+      border: 1px solid rgba(201,168,76,0.3);
+      border-radius: 12px; padding: 12px;
+      text-align: center; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .preset-btn:active { opacity: 0.7; }
+    .preset-val { font-size: 16px; font-weight: 800; color: var(--gold); }
+    .preset-thb { font-size: 10px; color: var(--gray); margin-top: 2px; }
+    .confirm-btn {
+      background: var(--gold); border: none;
+      border-radius: 8px; padding: 6px 14px;
+      color: var(--navy); font-weight: 900; font-size: 14px;
+      cursor: pointer;
+    }
+    .confirm-btn:disabled { opacity: 0.3; }
+    .bar-track {
+      height: 10px; background: var(--navy);
+      border-radius: 5px; margin-bottom: 16px; overflow: hidden;
+    }
+    .bar-fill { height: 10px; border-radius: 5px; transition: width 0.4s; }
+    .stats-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .stat-item { text-align: center; }
+    .stat-label { font-size: 10px; color: var(--gray); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .stat-val { font-size: 16px; font-weight: 900; }
+    .alert-banner {
+      background: rgba(231,76,60,0.15);
+      border: 1px solid rgba(231,76,60,0.35);
+      border-radius: 10px; padding: 10px;
+      color: var(--danger); font-size: 12px;
+      font-weight: 600; margin-top: 14px;
+    }
+    .spend-presets { display: flex; gap: 8px; margin-bottom: 12px; }
+    .spend-btn {
+      flex: 1; background: var(--navy);
+      border: 1px solid rgba(231,76,60,0.3);
+      border-radius: 10px; padding: 10px;
+      text-align: center; cursor: pointer;
+      color: var(--danger); font-size: 13px; font-weight: 700;
+    }
+    .new-day-btn {
+      width: 100%; border: 1px solid rgba(201,168,76,0.3);
+      background: none; border-radius: 14px;
+      padding: 14px; color: var(--gold);
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      margin-top: 8px;
+    }
+    .budget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .budget-total { color: var(--white); font-size: 22px; font-weight: 900; }
+    .budget-eur { color: var(--gray); font-size: 14px; font-weight: 400; }
+    .reset-btn {
+      border: 1px solid rgba(201,168,76,0.4);
+      background: none; border-radius: 8px;
+      padding: 5px 10px; color: var(--gold);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+
+    /* PHRASES */
+    .phrase-section { margin-bottom: 20px; }
+    .phrase-section-header {
+      display: flex; align-items: center;
+      gap: 8px; margin-bottom: 10px;
+    }
+    .phrase-cat { font-size: 13px; font-weight: 800; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; }
+    .phrase-card {
+      background: var(--navy-card);
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 16px; overflow: hidden;
+    }
+    .phrase-row {
+      padding: 14px;
+      border-bottom: 1px solid var(--navy);
+      cursor: pointer; transition: background 0.15s;
+    }
+    .phrase-row:last-child { border-bottom: none; }
+    .phrase-row:active { background: rgba(201,168,76,0.05); }
+    .phrase-fr { color: var(--white); font-size: 14px; font-weight: 600; }
+    .phrase-th { color: var(--gold); font-size: 16px; font-weight: 700; margin-top: 2px; }
+    .phrase-phonetic { color: var(--gray); font-size: 12px; font-style: italic; margin-top: 2px; }
+    .tip-box {
+      background: rgba(201,168,76,0.1);
+      border: 1px solid rgba(201,168,76,0.3);
+      border-radius: 14px; padding: 16px;
+      margin-top: 8px; color: var(--gray);
+      font-size: 13px; line-height: 1.6;
+    }
+    .tip-bold { color: var(--gold); font-weight: 700; }
+
+    /* LOADING */
+    .loading-wrap { text-align: center; padding: 20px; }
+    .spinner {
+      width: 32px; height: 32px; border: 3px solid rgba(201,168,76,0.2);
+      border-top-color: var(--gold); border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin: 0 auto 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { color: var(--gray); font-size: 13px; }
+  </style>
+</head>
+<body>
+
+<!-- SCREEN: HOME -->
+<div id="screen-home" class="screen active">
+  <div class="header">
+    <div>
+      <div class="app-name">LUNIA</div>
+      <div class="subtitle" id="greeting">Bonjour 👋</div>
+    </div>
+    <div class="avatar" id="user-avatar">?</div>
+  </div>
+
+  <div class="balance-card">
+    <div class="bal-label">Solde disponible</div>
+    <div class="bal-amount" id="balance-thb">฿ —</div>
+    <div class="bal-sub" id="balance-eur">≈ — EUR</div>
+    <div class="bal-row">
+      <span class="bal-flag">🇹🇭 Baht thaïlandais</span>
+      <span class="rate-chip">1 EUR = 37.6 ฿</span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="action-btn primary" onclick="openScanner()">
+      <span class="action-icon">📷</span>
+      <span class="action-label">Scanner</span>
+      <span class="action-sub">QR · PromptPay</span>
+    </button>
+    <button class="action-btn" onclick="openRecharge()">
+      <span class="action-icon">💳</span>
+      <span class="action-label">Recharger</span>
+      <span class="action-sub">Via SumUp</span>
+    </button>
+  </div>
+
+  <div class="section-title">Transactions</div>
+  <div id="tx-container">
+    <div class="empty-text">Rechargez pour commencer.</div>
+  </div>
+</div>
+
+<!-- SCREEN: BUDGET -->
+<div id="screen-budget" class="screen">
+  <div style="margin-bottom:4px;font-size:26px;font-weight:900;color:var(--white)">Budget du jour</div>
+  <div style="color:var(--gray);font-size:13px;margin-bottom:24px">Gardez le contrôle de vos dépenses</div>
+
+  <div id="budget-setup">
+    <div class="card">
+      <div class="card-label">Quel est votre budget aujourd'hui ?</div>
+      <div class="preset-row">
+        <div class="preset-btn" onclick="setBudget(30)"><div class="preset-val">30€</div><div class="preset-thb">฿1,128</div></div>
+        <div class="preset-btn" onclick="setBudget(50)"><div class="preset-val">50€</div><div class="preset-thb">฿1,880</div></div>
+        <div class="preset-btn" onclick="setBudget(100)"><div class="preset-val">100€</div><div class="preset-thb">฿3,760</div></div>
+        <div class="preset-btn" onclick="setBudget(150)"><div class="preset-val">150€</div><div class="preset-thb">฿5,640</div></div>
+      </div>
+      <div class="input-row">
+        <span class="input-symbol">€</span>
+        <input type="number" id="custom-budget" placeholder="Autre montant" />
+        <button class="confirm-btn" onclick="setBudgetCustom()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="budget-tracker" style="display:none">
+    <div class="card">
+      <div class="budget-header">
+        <div>
+          <div style="color:var(--gray);font-size:12px;margin-bottom:4px">Budget</div>
+          <div class="budget-total">฿<span id="budget-thb-display">0</span> <span class="budget-eur">(<span id="budget-eur-display">0</span>€)</span></div>
+        </div>
+        <button class="reset-btn" onclick="resetBudget()">Changer</button>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="budget-bar" style="width:0%;background:var(--success)"></div></div>
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-label">Dépensé</div>
+          <div class="stat-val" id="spent-val" style="color:var(--danger)">฿0</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Restant</div>
+          <div class="stat-val" id="remaining-val" style="color:var(--success)">฿0</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">En EUR</div>
+          <div class="stat-val" id="remaining-eur" style="color:var(--gold)">≈0€</div>
+        </div>
+      </div>
+      <div id="budget-alert" class="alert-banner" style="display:none">⚠️ Attention — budget presque atteint !</div>
+    </div>
+
+    <div class="section-title">Ajouter une dépense (฿)</div>
+    <div class="card">
+      <div class="spend-presets">
+        <button class="spend-btn" onclick="addSpend(50)">+฿50</button>
+        <button class="spend-btn" onclick="addSpend(100)">+฿100</button>
+        <button class="spend-btn" onclick="addSpend(200)">+฿200</button>
+        <button class="spend-btn" onclick="addSpend(500)">+฿500</button>
+      </div>
+      <div class="input-row">
+        <span class="input-symbol">฿</span>
+        <input type="number" id="custom-spend" placeholder="Montant" />
+        <button class="confirm-btn" onclick="addSpendCustom()">+</button>
+      </div>
+    </div>
+
+    <button class="new-day-btn" onclick="newDay()">↺ Nouvelle journée</button>
+  </div>
+</div>
+
+<!-- SCREEN: PHRASES -->
+<div id="screen-phrases" class="screen">
+  <div style="margin-bottom:4px;font-size:26px;font-weight:900;color:var(--white)">Phrases utiles</div>
+  <div style="color:var(--gray);font-size:13px;margin-bottom:24px">Thaï essentiel pour voyager</div>
+
+  <div class="phrase-section">
+    <div class="phrase-section-header"><span>💳</span><span class="phrase-cat">Paiement</span></div>
+    <div class="phrase-card">
+      <div class="phrase-row"><div class="phrase-fr">Vous acceptez le QR code ?</div><div class="phrase-th">รับ QR code ไหม ?</div><div class="phrase-phonetic">[ Ráp QR code mǎi? ]</div></div>
+      <div class="phrase-row"><div class="phrase-fr">Combien ça coûte ?</div><div class="phrase-th">เท่าไหร่ ?</div><div class="phrase-phonetic">[ Tâo rài? ]</div></div>
+      <div class="phrase-row"><div class="phrase-fr">Avez-vous PromptPay ?</div><div class="phrase-th">มี PromptPay ไหม ?</div><div class="phrase-phonetic">[ Mee PromptPay mǎi? ]</div></div>
+      <div class="phrase-row"><div class="phrase-fr">Je paie par QR</div><div class="phrase-th">จ่ายด้วย QR</div><div class="phrase-phonetic">[ Jàay dûay QR ]</div></div>
+    </div>
+  </div>
+
+  <div class="phrase-section">
+    <div class="phrase-section-header"><span>🗣️</span><span class="phrase-cat">Essentiel</span></div>
+    <div class="phrase-card">
+      <div class="phrase-row"><div class="phrase-fr">Merci</div><div class="phrase-th">ขอบคุณ</div><div class="phrase-phonetic">[ Khòp khun ]</div></div>
+      <div class="phrase-row"><div class="phrase-fr">Bonjour</div><div class="phrase-th">สวัสดี</div><div class="phrase-phonetic">[ Sà-wàt dee ]</div></div>
+      <div class="phrase-row"><div class="phrase-fr">Oui / Non</div><div class="phrase-th">ใช่ / ไม่</div><div class="phrase-phonetic">[ Châi / Mâi ]</div></div>
+      <div class="phrase-row"><div class="phrase-fr">Désolé</div><div class="phrase-th">ขอโทษ</div><div class="phrase-phonetic">[ Khǒo thôot ]</div></div>
+    </div>
+  </div>
+
+  <div class="phrase-section">
+    <div class="phrase-section-header"><span>🆘</span><span class="phrase-cat">Urgence</span></div>
+    <div class="phrase-card">
+      <div class="phrase-row"><div class="phrase-fr">Appelez la police</div><div class="phrase-th">เรียกตำรวจด้วย</div><div class="phrase-phonetic">[ Rîak tam-rùat dûay ]</div></div>
+      <div class="phrase-row"><div class="phrase-fr">J'ai besoin d'aide</div><div class="phrase-th">ต้องการความช่วยเหลือ</div><div class="phrase-phonetic">[ Tông-gaan khwaam chûay ]</div></div>
+      <div class="phrase-row"><div class="phrase-fr">Hôpital</div><div class="phrase-th">โรงพยาบาล</div><div class="phrase-phonetic">[ Roong pha-yaa-baan ]</div></div>
+    </div>
+  </div>
+
+  <div class="phrase-section">
+    <div class="phrase-section-header"><span>🛺</span><span class="phrase-cat">Transport</span></div>
+    <div class="phrase-card">
+      <div class="phrase-row"><div class="phrase-fr">Arrêtez-vous ici</div><div class="phrase-th">หยุดที่นี่</div><div class="phrase-phonetic">[ Yùt thîi nîi ]</div></div>
+      <div class="phrase-row"><div class="phrase-fr">Trop cher</div><div class="phrase-th">แพงเกินไป</div><div class="phrase-phonetic">[ Paaeng goen bpai ]</div></div>
+    </div>
+  </div>
+
+  <div class="tip-box">💡 Finissez par <span class="tip-bold">ครับ (khráp)</span> si vous êtes un homme, <span class="tip-bold">ค่ะ (khâ)</span> si vous êtes une femme — c'est poli.</div>
+</div>
+
+<!-- SCREEN: PROFIL -->
+<div id="screen-profile" class="screen">
+  <div style="margin-bottom:20px;font-size:26px;font-weight:900;color:var(--white)">Profil</div>
+  <div class="card" style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+    <div style="width:60px;height:60px;border-radius:30px;background:rgba(201,168,76,0.15);border:1.5px solid rgba(201,168,76,0.5);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;color:var(--gold)" id="profile-initials">?</div>
+    <div>
+      <div style="font-size:17px;font-weight:800;color:var(--white)" id="profile-name">—</div>
+      <div style="font-size:13px;color:var(--gray);margin-top:2px" id="profile-username">@—</div>
+    </div>
+  </div>
+  <div class="section-title">Infos</div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--navy)">
+      <span style="color:var(--gray);font-size:14px">Version</span>
+      <span style="color:var(--white);font-size:14px;font-weight:600">1.0.0</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--navy)">
+      <span style="color:var(--gray);font-size:14px">Taux EUR/THB</span>
+      <span style="color:var(--gold);font-size:14px;font-weight:600">37.6</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:10px 0">
+      <span style="color:var(--gray);font-size:14px">Backend</span>
+      <span style="color:var(--success);font-size:14px;font-weight:600">✓ Connecté</span>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="showScreen('home',this)">
+    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    Accueil
+  </button>
+  <button class="nav-btn" onclick="showScreen('budget',this)">
+    <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+    Budget
+  </button>
+  <button class="nav-btn" onclick="showScreen('phrases',this)">
+    <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>
+    Phrases
+  </button>
+  <button class="nav-btn" onclick="showScreen('profile',this)">
+    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+    Profil
+  </button>
+</nav>
+
+<!-- MODAL RECHARGE -->
+<div class="modal-overlay" id="modal-recharge">
+  <div class="modal-sheet">
+    <div class="modal-title">Recharger</div>
+    <div class="modal-sub">Paiement vérifié via SumUp</div>
+    <div class="quick-row">
+      <div class="quick-btn" onclick="selectAmount(20,this)"><div class="quick-val">20€</div><div class="quick-thb">฿752</div></div>
+      <div class="quick-btn" onclick="selectAmount(50,this)"><div class="quick-val">50€</div><div class="quick-thb">฿1,880</div></div>
+      <div class="quick-btn" onclick="selectAmount(100,this)"><div class="quick-val">100€</div><div class="quick-thb">฿3,760</div></div>
+      <div class="quick-btn" onclick="selectAmount(200,this)"><div class="quick-val">200€</div><div class="quick-thb">฿7,520</div></div>
+    </div>
+    <div class="input-row">
+      <span class="input-symbol">€</span>
+      <input type="number" id="custom-amount" placeholder="Autre montant" oninput="updateConvert()" />
+      <span class="input-convert" id="convert-display"></span>
+    </div>
+    <div id="recharge-loading" class="loading-wrap" style="display:none">
+      <div class="spinner"></div>
+      <div class="loading-text">Vérification du paiement...</div>
+    </div>
+    <button class="pay-btn" id="pay-btn" onclick="handleRecharge()" disabled>Choisissez un montant</button>
+    <button class="cancel-btn" onclick="closeRecharge()">Annuler</button>
+  </div>
+</div>
+
+<!-- SCANNER VIEW -->
+<div id="scanner-view">
+  <video id="scanner-video" autoplay playsinline muted></video>
+  <canvas id="scanner-canvas" style="display:none"></canvas>
+  <div class="scan-overlay">
+    <div class="scan-title">Pointez vers le QR</div>
+    <div class="scan-frame">
+      <div class="scan-corner c-tl"></div>
+      <div class="scan-corner c-tr"></div>
+      <div class="scan-corner c-bl"></div>
+      <div class="scan-corner c-br"></div>
+    </div>
+    <div class="scan-sub">PromptPay · Alipay · WeChat Pay</div>
+  </div>
+  <button class="close-scan" onclick="closeScanner()">✕ Fermer</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script>
+  const THB_PER_EUR = 37.6;
+  const BACKEND = 'https://airy-sparkle-production-c64b.up.railway.app';
+  const SUMUP_LINK = 'https://pay.sumup.com/b2c/QPIX4CVQ';
+
+  const tg = window.Telegram?.WebApp;
+  if (tg) { tg.ready(); tg.expand(); }
+
+  let userId = 'user_tg_' + (tg?.initDataUnsafe?.user?.id || 'guest');
+  let balance = 0;
+  let selectedEur = 0;
+  let transactions = [];
+  let scanInterval = null;
+  let pollInterval = null;
+  let budgetThb = 0;
+  let spentThb = 0;
+
+  // Init user info
+  const user = tg?.initDataUnsafe?.user;
+  if (user) {
+    document.getElementById('greeting').textContent = `Bonjour, ${user.first_name} 👋`;
+    document.getElementById('user-avatar').textContent = user.first_name?.[0]?.toUpperCase() || '?';
+    document.getElementById('profile-name').textContent = `${user.first_name} ${user.last_name || ''}`.trim();
+    document.getElementById('profile-username').textContent = `@${user.username || 'utilisateur'}`;
+    document.getElementById('profile-initials').textContent = (user.first_name?.[0] || '?').toUpperCase();
+  }
+
+  // Load balance
+  async function fetchBalance() {
+    try {
+      const r = await fetch(`${BACKEND}/balance/${userId}`);
+      const d = await r.json();
+      balance = d.balance || 0;
+      updateBalanceUI();
+    } catch { balance = 0; updateBalanceUI(); }
+  }
+
+  function updateBalanceUI() {
+    document.getElementById('balance-thb').textContent = `฿ ${balance.toLocaleString()}`;
+    document.getElementById('balance-eur').textContent = `≈ ${(balance / THB_PER_EUR).toFixed(0)} EUR`;
+  }
+
+  fetchBalance();
+
+  // Navigation
+  function showScreen(name, btn) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('screen-' + name).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // Transactions UI
+  function renderTransactions() {
+    const c = document.getElementById('tx-container');
+    if (!transactions.length) { c.innerHTML = '<div class="empty-text">Rechargez pour commencer.</div>'; return; }
+    c.innerHTML = `<div class="tx-list">${transactions.map(tx => `
+      <div class="tx-row">
+        <div class="tx-icon">${tx.type === 'recharge' ? '💳' : '🏪'}</div>
+        <div class="tx-info"><div class="tx-label">${tx.label}</div><div class="tx-date">${tx.date}</div></div>
+        <div class="tx-amount ${tx.amount > 0 ? 'amount-in' : 'amount-out'}">${tx.amount > 0 ? '+' : ''}฿${Math.abs(tx.amount).toLocaleString()}</div>
+      </div>`).join('')}</div>`;
+  }
+
+  function addTx(label, amount, type) {
+    transactions.unshift({ label, amount, type, date: new Date().toLocaleDateString('fr-FR') });
+    renderTransactions();
+  }
+
+  // Scanner
+  async function openScanner() {
+    const el = document.getElementById('scanner-view');
+    el.classList.add('open');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      document.getElementById('scanner-video').srcObject = stream;
+      startQRDetection();
+    } catch { alert('Caméra non disponible.'); el.classList.remove('open'); }
+  }
+
+  function startQRDetection() {
+    const video = document.getElementById('scanner-video');
+    const canvas = document.getElementById('scanner-canvas');
+    const ctx = canvas.getContext('2d');
+    scanInterval = setInterval(() => {
+      if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(img.data, img.width, img.height);
+      if (code) { closeScanner(); handleQRScanned(code.data); }
+    }, 300);
+  }
+
+  function closeScanner() {
+    clearInterval(scanInterval);
+    const video = document.getElementById('scanner-video');
+    if (video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = null; }
+    document.getElementById('scanner-view').classList.remove('open');
+  }
+
+  async function handleQRScanned(data) {
+    const amount = 150; // TODO: extraire depuis PromptPay
+    if (balance < amount) {
+      if (confirm(`Solde insuffisant !\nSolde : ฿${balance} | Besoin : ฿${amount}\n\nRecharger maintenant ?`)) openRecharge();
+      return;
+    }
+    if (!confirm(`Confirmer le paiement ?\n฿${amount} ≈ €${(amount/THB_PER_EUR).toFixed(2)}\n\n${data.substring(0,40)}`)) return;
+    try {
+      const r = await fetch(`${BACKEND}/debit`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, amount })
+      });
+      const d = await r.json();
+      if (r.ok) { balance = d.newBalance; updateBalanceUI(); addTx('Paiement commerçant', -amount, 'scan'); }
+      else alert('Erreur : ' + (d.error || 'Paiement échoué'));
+    } catch { alert('Impossible de contacter le serveur.'); }
+  }
+
+  // Recharge
+  function openRecharge() { document.getElementById('modal-recharge').classList.add('open'); }
+  function closeRecharge() {
+    document.getElementById('modal-recharge').classList.remove('open');
+    selectedEur = 0;
+    document.getElementById('custom-amount').value = '';
+    document.getElementById('convert-display').textContent = '';
+    document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('pay-btn').disabled = true;
+    document.getElementById('pay-btn').textContent = 'Choisissez un montant';
+    document.getElementById('recharge-loading').style.display = 'none';
+    clearInterval(pollInterval);
+  }
+
+  function selectAmount(eur, btn) {
+    selectedEur = eur;
+    document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('custom-amount').value = '';
+    document.getElementById('convert-display').textContent = '';
+    document.getElementById('pay-btn').disabled = false;
+    document.getElementById('pay-btn').textContent = `Payer ${eur}€ → ฿${Math.round(eur*THB_PER_EUR).toLocaleString()}`;
+  }
+
+  function updateConvert() {
+    const val = parseFloat(document.getElementById('custom-amount').value) || 0;
+    selectedEur = val;
+    document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+    if (val > 0) {
+      document.getElementById('convert-display').textContent = `→ ฿${Math.round(val*THB_PER_EUR).toLocaleString()}`;
+      document.getElementById('pay-btn').disabled = false;
+      document.getElementById('pay-btn').textContent = `Payer ${val}€ → ฿${Math.round(val*THB_PER_EUR).toLocaleString()}`;
+    } else {
+      document.getElementById('convert-display').textContent = '';
+      document.getElementById('pay-btn').disabled = true;
+      document.getElementById('pay-btn').textContent = 'Choisissez un montant';
+    }
+  }
+
+  async function handleRecharge() {
+    if (!selectedEur || selectedEur <= 0) return;
+    const thb = Math.round(selectedEur * THB_PER_EUR);
+    document.getElementById('recharge-loading').style.display = 'block';
+    document.getElementById('pay-btn').style.display = 'none';
+
+    try {
+      const r = await fetch(`${BACKEND}/create-checkout`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, eurAmount: selectedEur, thbAmount: thb })
+      });
+      const { checkoutId } = await r.json();
+
+      window.open(SUMUP_LINK, '_blank');
+
+      let attempts = 0;
+      pollInterval = setInterval(async () => {
+        attempts++;
+        try {
+          const vr = await fetch(`${BACKEND}/verify-checkout`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ checkoutId })
+          });
+          const vd = await vr.json();
+          if (vd.status === 'paid') {
+            clearInterval(pollInterval);
+            balance = vd.balance;
+            updateBalanceUI();
+            addTx(`Rechargement ${selectedEur}€`, thb, 'recharge');
+            closeRecharge();
+            alert(`✓ +฿${thb.toLocaleString()} ajoutés à votre solde !`);
+          }
+          if (attempts >= 20) { clearInterval(pollInterval); closeRecharge(); alert('Paiement non confirmé. Réessayez.'); }
+        } catch { clearInterval(pollInterval); closeRecharge(); }
+      }, 3000);
+    } catch {
+      alert('Erreur serveur.');
+      document.getElementById('recharge-loading').style.display = 'none';
+      document.getElementById('pay-btn').style.display = 'block';
+    }
+  }
+
+  // Budget
+  function setBudget(eur) { budgetThb = Math.round(eur * THB_PER_EUR); showTracker(eur); }
+  function setBudgetCustom() {
+    const v = parseFloat(document.getElementById('custom-budget').value);
+    if (!v || v <= 0) return;
+    budgetThb = Math.round(v * THB_PER_EUR);
+    showTracker(v);
+  }
+  function showTracker(eur) {
+    document.getElementById('budget-setup').style.display = 'none';
+    document.getElementById('budget-tracker').style.display = 'block';
+    document.getElementById('budget-thb-display').textContent = budgetThb.toLocaleString();
+    document.getElementById('budget-eur-display').textContent = eur;
+    updateBudgetUI();
+  }
+  function resetBudget() {
+    spentThb = 0; budgetThb = 0;
+    document.getElementById('budget-setup').style.display = 'block';
+    document.getElementById('budget-tracker').style.display = 'none';
+    document.getElementById('custom-budget').value = '';
+  }
+  function addSpend(v) { spentThb += v; updateBudgetUI(); }
+  function addSpendCustom() {
+    const v = parseFloat(document.getElementById('custom-spend').value);
+    if (!v || v <= 0) return;
+    spentThb += v;
+    document.getElementById('custom-spend').value = '';
+    updateBudgetUI();
+  }
+  function newDay() { spentThb = 0; updateBudgetUI(); }
+  function updateBudgetUI() {
+    const pct = budgetThb > 0 ? Math.min((spentThb / budgetThb) * 100, 100) : 0;
+    const remaining = budgetThb - spentThb;
+    const color = pct >= 90 ? 'var(--danger)' : pct >= 70 ? 'var(--warning)' : 'var(--success)';
+    document.getElementById('budget-bar').style.width = pct + '%';
+    document.getElementById('budget-bar').style.background = color;
+    document.getElementById('spent-val').textContent = '฿' + spentThb.toLocaleString();
+    document.getElementById('remaining-val').textContent = remaining >= 0 ? '฿' + remaining.toLocaleString() : 'Dépassé !';
+    document.getElementById('remaining-val').style.color = color;
+    document.getElementById('remaining-eur').textContent = remaining >= 0 ? `≈${(remaining/THB_PER_EUR).toFixed(0)}€` : '—';
+    document.getElementById('budget-alert').style.display = pct >= 90 ? 'block' : 'none';
+  }
+</script>
+</body>
+</html>
